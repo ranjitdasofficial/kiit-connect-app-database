@@ -5,8 +5,11 @@ const  Users = require("./models/User");
 const app =express();
 app.use(express.json())
 
-const PORT = 5000 || process.env.PORT;
+const PORT =  process.env.PORT || PORT;
 
+app.get("/",(req,res)=>{
+    res.json({connection:true});
+})
 
 app.post("/api/auth/signup",async(req,res)=>{
     try {
