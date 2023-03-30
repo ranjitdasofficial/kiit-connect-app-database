@@ -6,8 +6,8 @@ const Users = require("./models/User");
 const app = express();
 app.use(express.json());
 
-// const PORT = process.env.PORT || 5000;
-const PORT =  5000;
+const PORT = process.env.PORT || 5000;
+// const PORT =  5000;
 
 app.get("/", (req, res) => {
   res.json({ connection: true });
@@ -96,6 +96,9 @@ app.post("/test",async(req,res)=>{
   console.log(req.body.email);
   res.json({success:false});
 })
+
+
+
 
 app.post("/api/auth/UpdateAdditional",async(req,res)=>{
 
