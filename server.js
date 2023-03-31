@@ -1,16 +1,18 @@
 const express = require("express");
 const { connectdb } = require("./db/db");
 const AdditionalData = require("./models/AdditionalInfo");
+const cors = require("cors");
 
 const Users = require("./models/User");
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const PORT = process.env.PORT || 5000;
 // const PORT =  5000;
 
 app.get("/", (req, res) => {
-  res.json({ connection: true });
+  res.status(200).json({ connection: true });
 });
 
 
@@ -257,6 +259,6 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(5000, () => {
   console.log("Server is listening on Port 5000");
 });
