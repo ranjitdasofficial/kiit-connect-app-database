@@ -259,6 +259,6 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
+app.listen(PORT, () => {
   console.log("Server is listening on Port 5000");
 });
