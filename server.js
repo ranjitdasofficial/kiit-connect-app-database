@@ -132,6 +132,35 @@ app.post("/api/auth/UpdateAdditional",async(req,res)=>{
       }else{
         return res.json({success:false,message:"Something went Wrong!!",modified:false});
       }
+    }else{
+     
+      const batch = req.body.batch;
+      const branch = req.body.branch;
+     const currentSemester = req.body.currentSemester;
+     const currentYear= req.body.currentYear;
+     const github = req.body.github;
+     const hackerRank = req.body.hackerRank;
+     const linkedin = req.body.linkedin;
+     const others = req.body.others;
+     const yop = req.body.yop;
+
+     AdditionalData.create({
+      email:req.body.email,
+      batch:batch??"Set",
+      branch:branch??"Set",
+      currentSemester:currentSemester??"Set",
+      currentYear:currentYear??"Set",
+      github:github??"Set",
+      hackerRank:hackerRank??"Set",
+      linkedin:linkedin??"Set",
+      others:others??"Set",
+      yop:yop??"Set"
+
+     }).then(()=>{
+      return res.json({success:true,message:"Data has been updated",modified:true});
+     }).catch((err)=>{
+      return res.json({success:false,message:"Something went Wrong!!"});
+     })
     }
     
   } catch (error) {
