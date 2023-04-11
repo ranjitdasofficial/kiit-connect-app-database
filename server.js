@@ -20,6 +20,9 @@ const delay = (delayInms) => {
   return new Promise(resolve => setTimeout(resolve, delayInms));
 }
 
+
+
+
 let counter= 0;
 app.get("/data", async(req, res) => {
 
@@ -166,6 +169,33 @@ app.post("/api/auth/UpdateAdditional",async(req,res)=>{
   } catch (error) {
     console.log(error);
     return res.json({success:false,message:"Something went Wrong!!"});
+  }
+})
+
+
+app.post("/getAllUsers",async(req,res)=>{
+  try {
+    await connectdb();
+    const users = await Users.find({}).select("-password");
+    if(!users){
+      return res.json({success:false,message:"Cannot Reach to Server",data:null});
+    }
+    return res.json({success:true,message:"Data Fetched Sucessfully",data:users});
+  } catch (error) {
+    return res.json({success:false,message:"Internal Error",data:null});
+  }
+})
+
+app.post("/getAllUsersAddtional",async(req,res)=>{
+  try {
+    await connectdb();
+    const users = await AdditionalData.find({});
+    if(!users){
+      return res.json({success:false,message:"Cannot Reach to Server",data:null});
+    }
+    return res.json({success:true,message:"Data Fetched Sucessfully",data:users});
+  } catch (error) {
+    return res.json({success:false,message:"Internal Error",data:null});
   }
 })
 
