@@ -82,6 +82,58 @@ counter++;
 
 
 
+const nodemailer = require('nodemailer');
+
+// Create a transport object
+let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'mail.server.hib@gmail.com',
+        pass: 'wbrknqwssdophyyd'
+    }
+});
+
+
+// AUTH_EMAIL = mail.server.hib@gmail.com
+// AUTH_PASSWORD = wbrknqwssdophyyd
+
+// Set options for the message
+
+
+// Send the email
+
+
+app.post("/report",async(req,res)=>{
+
+    var rp = await sendMail(req.body.message,req.body.senderEmail,req.body.senderName);
+    res.json(rp);
+  
+})
+
+const sendMail = (message,senderEmail,senderName)=>new Promise((resolve,reject)=>{
+  let mailOptions = {
+    from: '"KIIT CONNECT"<no-reply@kiitconnect.live>',
+    to: 'technicalranjit@gmail.com',
+    subject: `Feedback/Report from : ${senderName} : ${senderEmail} `,
+    text: `${message}`
+};
+  transporter.sendMail(mailOptions, function(error, info) {
+    if (error) {
+       reject({message:"Error Occured",success:false});
+    } else {
+        // console.log('Email sent: ' + info.response);
+        resolve({message:"Your response has been recorded",success:true});
+    }
+});
+})
+
+
+
+
+
+
+
+
 app.post("/api/auth/getAditionalInfo",async(req,res)=>{
   try {
     await connectdb();
