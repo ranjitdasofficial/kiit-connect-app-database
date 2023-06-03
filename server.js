@@ -3,6 +3,9 @@ const { connectdb } = require("./db/db");
 const AdditionalData = require("./models/AdditionalInfo");
 const cors = require("cors");
 
+const multer = require("multer")
+const fs = require("fs");
+
 const Users = require("./models/User");
 const app = express();
 app.use(express.json());
@@ -369,6 +372,219 @@ app.post("/api/auth/signup", async (req, res) => {
     return res.json({ success: false, message: "Something Went Wrong!!" });
   }
 });
+
+
+
+
+
+//uploading images to google drive
+
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Specify the directory where uploaded files will be stored
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    // Specify a unique name for the uploaded file
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+// Create the Multer upload instance
+const upload = multer({ storage: storage });
+
+
+
+
+
+
+
+const { google } = require("googleapis");
+// const fs = require("fs");
+// const path = require("path");
+
+const key = require("./cred.json");
+const ProjectModel = require("./models/ProjectModel");
+const auth = new google.auth.GoogleAuth({
+  keyFile: key,
+  scopes: "https://www.googleapis.com/auth/drive",
+});
+
+var drive = google.drive({
+  version: "v3",
+  auth: auth,
+});
+
+var jwToken = new google.auth.JWT(
+  key.client_email,
+  null,
+  key.private_key,
+  ["https://www.googleapis.com/auth/drive"],
+  null
+);
+
+jwToken.authorize((authErr, token) => {
+  if (authErr) {
+    console.log("error : " + authErr);
+    return;
+  } else {
+    console.log("Authorization accorded");
+  }
+});
+
+
+
+app.post('/upload', upload.single('file'), async(req, res) => {
+  
+  try {
+
+    await connectdb();
+
+   
+
+    var fileMetadata = {
+      name: req.file.originalname,
+
+      parents:["1dqvUovRlXlVRQaSohe2DVu7ZVIT5Minc"]
+     
+    
+    }
+  //   C:\Users\KIIT01\OneDrive\Desktop\KIIT_Project\test\kiit_university_app\pages\api\drive\video.mp4
+    var media = {
+      mimeType: req.file.mimetype,
+      body: fs.createReadStream(path.join(__dirname, req.file.path)),
+    };
+    drive.files.create(
+      {
+        auth: jwToken,
+        resource: fileMetadata,
+        media: media,
+        fields: "id",
+      
+      },
+      function (err, file) {
+        if (err) {
+          // Handle error
+          console.error(err);
+          res.json({success:false,message:"Error "});
+        } else {
+
+          console.log(file.data.id);
+          ProjectModel.create({
+            projectName:req.body.projectName,
+            projectDesc:req.body.projectDesc,
+            githubUrl:req.body.githubUrl,
+            liveUrl:req.body.liveUrl,
+            projectImage:file.data.id,
+            createdDate:new Date(),
+            uploadedBy:req.body.uploadedBy,
+            likeCount:0,
+            email:req.body.email,
+            profilePic:req.body.profilePic,
+            active:true,
+            likedEmail:["21053420@kiit.ac.in"]
+          }).then((d)=>{
+           return res.json({success:true,message:"File has been created ",file:file,});
+          }).catch((err)=>res.json(err));
+        }
+      }
+    );
+    
+  
+    
+  } catch (error) {
+    console.log(error);
+  }
+
+  
+})
+
+
+app.post("/like",async(req,res)=>{
+
+    try {
+      await connectdb();
+      console.log(req.body.likedEmail);
+      const up = await ProjectModel.updateOne(
+        { _id: req.body.id },
+        { $set: {likedEmail:req.body.likedEmail} },
+        {new:true}
+      ).then((updatedoc)=>{
+        console.log(updatedoc);
+        res.json({mes:updatedoc})
+      }).catch((err)=>{
+        console.log({err:err});
+        res.json(err);
+      });
+
+      // console.log(up);
+      // if(up.modifiedCount>0){
+      //   return res.json({success:true,message:"Data has been updated",modified:true});
+      // }else{
+      //   return res.json({success:false,message:"Something went Wrong!!",modified:false});
+      // }
+      
+      
+    } catch (error) {
+      return res.json({success:false,message:error,modified:false});
+          
+    }
+  }
+
+ 
+);
+
+
+
+app.get("/rand",async(req,res)=>{
+  await connectdb();
+
+    ProjectModel.find({active:true}).then((data)=>
+    
+    {
+
+      for (let i = data.length-1; i>0; i--) {
+        let j = Math.floor(Math.random() * (i+1))
+
+        let temp = data[i];
+        data[i]=data[j];
+        data[j] = temp;
+        
+      }
+
+      res.json(data);
+    }
+    
+    ).catch((err)=>console.log(err));
+})
+
+
+app.post("/deleteProject",async(req,res)=>{
+  try {
+    await connectdb();
+
+    ProjectModel.findOneAndDelete({
+      _id:req.body.id,
+      email:req.body.email
+    }).then((val)=>{
+     return res.json({success:true,message:"Item Deleted Sucessfully"});
+    }).catch((err)=>res.json({success:false,message:"Something went wrong!!"}))
+
+  } catch (error) {
+    return res.json({success:false,message:error})
+  }
+})
+
+
+app.get("/allProject",async(req,res)=>{
+
+    await connectdb();
+
+    ProjectModel.find().then((data)=>res.json(data)).catch((err)=>console.log(err));
+  
+})
 
 app.listen(PORT, () => {
   console.log("Server is listening on Port 5000");
