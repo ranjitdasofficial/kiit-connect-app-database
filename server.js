@@ -443,54 +443,74 @@ app.post('/upload', upload.single('file'), async(req, res) => {
     await connectdb();
 
    
-
-    var fileMetadata = {
-      name: req.file.originalname,
-
-      parents:["1dqvUovRlXlVRQaSohe2DVu7ZVIT5Minc"]
-     
-    
-    }
-  //   C:\Users\KIIT01\OneDrive\Desktop\KIIT_Project\test\kiit_university_app\pages\api\drive\video.mp4
-    var media = {
-      mimeType: req.file.mimetype,
-      body: fs.createReadStream(path.join(__dirname, req.file.path)),
-    };
-    drive.files.create(
-      {
-        auth: jwToken,
-        resource: fileMetadata,
-        media: media,
-        fields: "id",
+    if(req.file!=null){
+      var fileMetadata = {
+        name: req.file.originalname,
+  
+        parents:["1dqvUovRlXlVRQaSohe2DVu7ZVIT5Minc"]
+       
       
-      },
-      function (err, file) {
-        if (err) {
-          // Handle error
-          console.error(err);
-          res.json({success:false,message:"Error "});
-        } else {
-
-          console.log(file.data.id);
-          ProjectModel.create({
-            projectName:req.body.projectName,
-            projectDesc:req.body.projectDesc,
-            githubUrl:req.body.githubUrl,
-            liveUrl:req.body.liveUrl,
-            projectImage:file.data.id,
-            createdDate:new Date(),
-            uploadedBy:req.body.uploadedBy,
-            likeCount:0,
-            email:req.body.email,
-            profilePic:req.body.profilePic,
-            active:true,
-            likedEmail:["21053420@kiit.ac.in"]
-          }).then((d)=>{
-           return res.json({success:true,message:"File has been created ",file:file,});
-          }).catch((err)=>res.json(err));
-        }
       }
-    );
+    //   C:\Users\KIIT01\OneDrive\Desktop\KIIT_Project\test\kiit_university_app\pages\api\drive\video.mp4
+      var media = {
+        mimeType: req.file.mimetype,
+        body: fs.createReadStream(path.join(__dirname, req.file.path)),
+      };
+      drive.files.create(
+        {
+          auth: jwToken,
+          resource: fileMetadata,
+          media: media,
+          fields: "id",
+        
+        },
+        function (err, file) {
+          if (err) {
+            // Handle error
+            console.error(err);
+            res.json({success:false,message:"Error "});
+          } else {
+  
+            console.log(file.data.id);
+            ProjectModel.create({
+              projectName:req.body.projectName,
+              projectDesc:req.body.projectDesc,
+              githubUrl:req.body.githubUrl,
+              liveUrl:req.body.liveUrl,
+              projectImage:file.data.id,
+              createdDate:new Date(),
+              uploadedBy:req.body.uploadedBy,
+              likeCount:0,
+              email:req.body.email,
+              profilePic:req.body.profilePic,
+              active:true,
+              likedEmail:[]
+            }).then((d)=>{
+             return res.json({success:true,message:"File has been created ",file:file,});
+            }).catch((err)=>res.json(err));
+          }
+        }
+      );
+      
+    }else{
+      ProjectModel.create({
+        projectName:req.body.projectName,
+        projectDesc:req.body.projectDesc,
+        githubUrl:req.body.githubUrl,
+        liveUrl:req.body.liveUrl,
+        projectImage:null,
+        createdDate:new Date(),
+        uploadedBy:req.body.uploadedBy,
+        likeCount:0,
+        email:req.body.email,
+        profilePic:req.body.profilePic,
+        active:true,
+        likedEmail:[]
+      }).then((d)=>{
+       return res.json({success:true,message:"File has been created ",file:file,});
+      }).catch((err)=>res.json(err));
+    }
+
     
   
     
