@@ -468,7 +468,16 @@ app.post('/upload', upload.single('file'), async(req, res) => {
           if (err) {
             // Handle error
             console.error(err);
-            res.json({success:false,message:"Error "});
+            fs.unlink(path.join(__dirname,req.file.path),(err)=>{
+              if(err)
+              {
+                console.log("Error Deleting file");
+                
+              }else{
+                console.log("Deleted Sucessfully");
+              }
+            });
+           return res.json({success:false,message:"Error "});
           } else {
   
             console.log(file.data.id);
@@ -486,9 +495,32 @@ app.post('/upload', upload.single('file'), async(req, res) => {
               active:true,
               likedEmail:[]
             }).then((d)=>{
+
+              fs.unlink(path.join(__dirname,req.file.path),(err)=>{
+                if(err)
+                {
+                  console.log("Error Deleting file");
+                  return;
+                }
+                console.log("Deleted Sucessfully");
+              });
              return res.json({success:true,message:"File has been created ",file:file,});
-            }).catch((err)=>res.json(err));
+
+            }).catch((err)=>{
+              fs.unlink(path.join(__dirname,req.file.path),(err)=>{
+                if(err)
+                {
+                  console.log("Error Deleting file");
+                  return;
+                }
+                console.log("Deleted Sucessfully");
+              });
+             return res.json(err)});
           }
+
+
+
+
         }
       );
       
