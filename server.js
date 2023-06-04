@@ -623,6 +623,16 @@ app.get("/rand",async(req,res)=>{
 })
 
 
+app.get("/getfiles",async(req,res)=>{
+  fs.readdir(path.join(__dirname,"uploads/"),(err,files)=>{
+    if(err){
+      return res.json({err:err});
+    }
+    return res.json({files:files});
+  });
+})
+
+
 app.post("/deleteProject",async(req,res)=>{
   try {
 
