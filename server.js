@@ -539,14 +539,22 @@ app.post('/upload', upload.single('file'), async(req, res) => {
         active:true,
         likedEmail:[]
       }).then((d)=>{
-       return res.json({success:true,message:"File has been created ",file:file,});
-      }).catch((err)=>res.json({success:false,message:"Error Something went wrong!"}));
+       return res.json({success:true,message:"File has been created ",});
+      }).catch((err)=>{
+        
+        console.log(err);
+        res.json({success:false,message:"Error Something went wrong!"})
+    
+    
+    });
     }
 
     
   
     
   } catch (error) {
+
+    console.log(err);
 
     return res.json({success:false,message:"Error Something went wrong!"});
     // console.log(error);
@@ -617,12 +625,16 @@ app.get("/rand",async(req,res)=>{
 
 app.post("/deleteProject",async(req,res)=>{
   try {
+
+    console.log("deleting....");
     await connectdb();
 
     ProjectModel.findOneAndDelete({
       _id:req.body.id,
       email:req.body.email
     }).then((val)=>{
+
+      console.log(val);
      return res.json({success:true,message:"Item Deleted Sucessfully"});
     }).catch((err)=>res.json({success:false,message:"Something went wrong!!"}))
 
