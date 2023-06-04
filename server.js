@@ -515,7 +515,7 @@ app.post('/upload', upload.single('file'), async(req, res) => {
                 }
                 console.log("Deleted Sucessfully");
               });
-             return res.json(err)});
+             return res.json({success:false,message:"Error Something went wrong!"})});
           }
 
 
@@ -540,14 +540,16 @@ app.post('/upload', upload.single('file'), async(req, res) => {
         likedEmail:[]
       }).then((d)=>{
        return res.json({success:true,message:"File has been created ",file:file,});
-      }).catch((err)=>res.json(err));
+      }).catch((err)=>res.json({success:false,message:"Error Something went wrong!"}));
     }
 
     
   
     
   } catch (error) {
-    console.log(error);
+
+    return res.json({success:false,message:"Error Something went wrong!"});
+    // console.log(error);
   }
 
   
