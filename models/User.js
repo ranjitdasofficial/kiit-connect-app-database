@@ -4,11 +4,20 @@ const { Schema } = mongoose;
 const UserSchema = new Schema({
   email:String,
   accessToken:String,
-  createdAt:Date,
+  createdAt:{
+    type:Date,
+    default: function() {
+      return new Date();
+    },
+  },
   profilePic:String,
   verified:Boolean,
   displayName:String,
   password:String,
+  isAdmin:{
+    type:Boolean,
+    default:false
+  }
 
 });
 mongoose.models ={};
