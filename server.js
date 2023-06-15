@@ -998,9 +998,7 @@ try {
     return res.json({ success: false, err: "post not found" });
   }
 
-  const deviceToken = await DeviceToken.findOne({userid:post.uploadedBy._id}).select("deviceToken -_id");
-  const user = await Users.findById(req.body.userid).select("displayName -_id");
-
+ 
 
 
   const cmntidx = post.comments.findIndex((c) => c._id == req.body.commentId);
@@ -1016,6 +1014,10 @@ try {
   if (likeidx == -1) {
     post.comments[cmntidx].likedEmail.push(req.body.userid);
       if(req.body.userid!=post.comments[cmntidx].userid){
+
+        const deviceToken = await DeviceToken.findOne({userid:post.comments[cmntidx].userid}).select("deviceToken -_id");
+        const user = await Users.findById(req.body.userid).select("displayName -_id");
+      
 
         const message = {
           data:{
@@ -1059,9 +1061,7 @@ app.post("/repliesLike", async (req, res) => {
   if (!post) {
     return res.json({ success: false, err: "post not found" });
   }
-  const deviceToken = await DeviceToken.findOne({userid:post.uploadedBy._id}).select("deviceToken -_id");
-  const user = await Users.findById(req.body.userid).select("displayName -_id");
-
+ 
 
 
   const parentCmntIdx = post.comments.findIndex(
@@ -1087,6 +1087,9 @@ app.post("/repliesLike", async (req, res) => {
   if (replylikeidx == -1) {
 
     if(req.body.userid!=post.comments[parentCmntIdx].replies[replyidx].userid){
+      const deviceToken = await DeviceToken.findOne({userid:post.comments[parentCmntIdx].replies[replyidx].userid}).select("deviceToken -_id");
+      const user = await Users.findById(req.body.userid).select("displayName -_id");
+    
       const message = {
         data:{
           event:"replyLike",
