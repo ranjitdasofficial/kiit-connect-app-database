@@ -388,6 +388,7 @@ Users.find({ _id: { $nin: followingUsers },   displayName: { $regex: new RegExp(
 const promises = d.map((user) => {
   return new Promise((resolve, reject) => {
     const obj = {
+
       userid: user,
       isFollowing: false
     };
@@ -452,7 +453,7 @@ Promise.all(promises)
     reject(error);
   }
 });
-  res.json({length:followerUser.followers.length,data:p});
+  res.json({id:followerUser._id,length:followerUser.followers.length,data:p});
 }else{
 
   const followerUser = await FollowersModel.findOne({userid:whomtosearch}).populate('following');
@@ -485,7 +486,7 @@ Promise.all(promises)
     reject(error);
   }
 });
-  res.json({length:followerUser.following.length,data:p});
+  res.json({id:followerUser._id,length:followerUser.following.length,data:p});
 }
   } catch (error) {
     console.log(error);
@@ -1541,7 +1542,7 @@ app.post("/addcomment", async (req, res) => {
 
   const p = await ProjectModel.findById(postid);
 
-  const deviceToken = await DeviceToken.findOne({userid:req.body.userid}).select("deviceToken -_id");
+  const deviceToken = await DeviceToken.findOne({userid:p.uploadedBy._id}).select("deviceToken -_id");
   const user = await Users.findById(req.body.userid).select("displayName -_id");
  
 if(req.body.userid!=p.uploadedBy._id){
