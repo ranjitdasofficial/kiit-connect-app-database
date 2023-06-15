@@ -338,7 +338,7 @@ const limit = 10;
 
 
 
-  res.json({length:followerUser.followers.length,data:p});
+  res.json({id:followerUser._id, length:followerUser.followers.length,data:p});
 
 
 })
@@ -760,7 +760,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     await connectdb();
 
     const user = await Users.findById(req.body.uploadedBy).select("displayName");
-    const deviceToken = (await DeviceToken.find().select("deviceToken -_id")).filter((val)=>val.deviceToken!==req.body.deviceToken).map((val)=>val.deviceToken);
+    const deviceToken = (await DeviceToken.find().select("deviceToken -_id")).filter((val)=>val.deviceToken!=req.body.deviceToken).map((val)=>val.deviceToken);
 
 
     console.log(deviceToken);
@@ -941,6 +941,8 @@ app.post("/like", async (req, res) => {
   }
     const likedIndex = post.likedEmail.findIndex((val) => val == req.body.userid);
 
+  
+
     const deviceToken = await DeviceToken.findOne({userid:post.uploadedBy._id}).select("deviceToken -_id");
     const user = await Users.findById(req.body.userid).select("displayName -_id");
 
@@ -952,21 +954,26 @@ app.post("/like", async (req, res) => {
     post.likedEmail.splice(likedIndex, 1);
     // console.log("yes");
   } else {
-    const message = {
-      data:{
-        event:"like",
-        
-        data:`${req.body.postid}`,
-      },
-      image:`https://drive.google.com/uc?export=download&id=${post.projectImage}`,
-      body:`${user.displayName} has liked your project`
 
 
+      if(req.body.userid!=post.uploadedBy._id){
 
-    }
-
+        const message = {
+          data:{
+            event:"like",
+            
+            data:`${req.body.postid}`,
+          },
+          image:`https://drive.google.com/uc?export=download&id=${post.projectImage}`,
+          body:`${user.displayName} has liked your project`
     
-    sendMessagec([`${deviceToken.deviceToken}`],message);
+    
+    
+        }
+    
+        
+        sendMessagec([`${deviceToken.deviceToken}`],message);
+    }
     post.likedEmail.push(req.body.userid);
     console.log("No");
   }
@@ -1007,21 +1014,21 @@ try {
 
   if (likeidx == -1) {
     post.comments[cmntidx].likedEmail.push(req.body.userid);
-    const message = {
-      data:{
-        event:"commentLike",
-       
-        data:`${req.body.postid}`,
-      },
-      image:`https://drive.google.com/uc?export=download&id=${post.projectImage}`,
-      body:`${user.displayName} has liked your comment`
+      if(req.body.userid!=post.comments[cmntidx].userid){
 
-
-
-    }
-
+        const message = {
+          data:{
+            event:"commentLike",
+           
+            data:`${req.body.postid}`,
+          },
+          image:`https://drive.google.com/uc?export=download&id=${post.projectImage}`,
+          body:`${user.displayName} has liked your comment`
     
-    sendMessagec([`${deviceToken.deviceToken}`],message);
+        }
+        
+        sendMessagec([`${deviceToken.deviceToken}`],message);
+    }
   } else {
     post.comments[cmntidx].likedEmail.splice(likeidx, 1);
   }
@@ -1077,21 +1084,22 @@ app.post("/repliesLike", async (req, res) => {
   ].likedEmail.findIndex((lk) => lk == req.body.userid);
 
   if (replylikeidx == -1) {
-    const message = {
-      data:{
-        event:"replyLike",
-     
-        data:`${req.body.postid}`,
-      },
-      image:`https://drive.google.com/uc?export=download&id=${post.projectImage}`,
-      body:`${user.displayName} has liked your reply`
 
-
-
+    if(req.body.userid!=post.comments[parentCmntIdx].replies[replyidx].userid){
+      const message = {
+        data:{
+          event:"replyLike",
+       
+          data:`${req.body.postid}`,
+        },
+        image:`https://drive.google.com/uc?export=download&id=${post.projectImage}`,
+        body:`${user.displayName} has liked your reply`
+  
+      }
+  
+      
+      sendMessagec([`${deviceToken.deviceToken}`],message);
     }
-
-    
-    sendMessagec([`${deviceToken.deviceToken}`],message);
     post.comments[parentCmntIdx].replies[replyidx].likedEmail.push(
       req.body.userid
     );
@@ -1294,19 +1302,23 @@ app.post("/replies", async (req, res) => {
       const authoruid =  p.comments[cmntIdx].userid;
       const deviceToken = await DeviceToken.findOne({userid:authoruid}).select("deviceToken -_id");
       const likedBy = await Users.findById(req.body.userid).select("displayName -_id");
-      const message = {
-        data:{
-          event:"addReply",
+     
+      if(p.comments[cmntIdx].userid!=req.body.userid){
+
+        const message = {
+          data:{
+            event:"addReply",
+        
+            data:`${req.body.postid}`,
+          },
+          image:`https://drive.google.com/uc?export=download&id=${p.projectImage}`,
+          body:`${likedBy.displayName} has reply your comment`
       
-          data:`${req.body.postid}`,
-        },
-        image:`https://drive.google.com/uc?export=download&id=${p.projectImage}`,
-        body:`${likedBy.displayName} has reply your comment`
-    
+        }
+      
+        
+        sendMessagec([`${deviceToken.deviceToken}`],message);
       }
-    
-      
-      sendMessagec([`${deviceToken.deviceToken}`],message);
 
 
 
@@ -1531,6 +1543,8 @@ app.post("/addcomment", async (req, res) => {
 
   const deviceToken = await DeviceToken.findOne({userid:req.body.userid}).select("deviceToken -_id");
   const user = await Users.findById(req.body.userid).select("displayName -_id");
+ 
+if(req.body.userid!=p.uploadedBy._id){
   const message = {
     data:{
       event:"addComment",
@@ -1540,12 +1554,12 @@ app.post("/addcomment", async (req, res) => {
     image:`https://drive.google.com/uc?export=download&id=${p.projectImage}`,
     body:`${user.displayName} commented on your Project`
 
-
-
-  }
-
-  
+  }  
   sendMessagec([`${deviceToken.deviceToken}`],message);
+
+}
+
+
   p.comments.push(c);
 
   p.save()
@@ -1780,6 +1794,7 @@ app.post("/getfollowing",async(req,res)=>{
       const isFollowing = eachFollowerList.followers.includes(currentUserId);
       
       return {
+
         isFollowing: isFollowing,
         userid:{
           displayName:user.displayName,
@@ -1798,7 +1813,7 @@ app.post("/getfollowing",async(req,res)=>{
 
 
 
-  res.json({length:followerUser.following.length,data:p});
+  res.json({id:followerUser._id,length:followerUser.following.length,data:p});
 
  } catch (error) {
   console.log(error);
