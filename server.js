@@ -267,13 +267,14 @@ app.post("/getSuggestion", async (req, res) => {
     .then((results) => {
       console.log(results);
 
-      res.json({length:d.length, data:results});
+     return res.status(200).json({length:d.length, data:results});
       // Do something with the results
     })
     .catch((error) => {
       console.error(error);
       // Handle the error
-      console.log(error);
+
+      return res.status(500).json({err:error});
     });
   
 
@@ -285,7 +286,7 @@ app.post("/getSuggestion", async (req, res) => {
   
   } catch (error) {
     console.log(error);
-    return res.json({ success: false, message: error, data: null });
+    return res.status(500).json({ success: false, message: error, data: null });
   }
 });
 
@@ -294,6 +295,7 @@ app.post("/getSuggestion", async (req, res) => {
 
 
 app.post("/getfollowers",async(req,res)=>{
+ try {
   await connectdb();
   const whomtosearch = req.body.whomtosearch;
   const currentUserId = req.body.currentUserId;
@@ -338,7 +340,11 @@ const limit = 10;
 
 
 
-  res.json({id:followerUser._id, length:followerUser.followers.length,data:p});
+  return res.status(200).json({id:followerUser._id, length:followerUser.followers.length,data:p});
+ } catch (error) {
+  console.log(error);
+  return res.status(500).json({err:error});
+ }
 
 
 })
@@ -400,13 +406,15 @@ Promise.all(promises)
   .then((results) => {
     console.log(results);
 
-    res.json({length:d.length, data:results});
+    return res.status(200).json({length:d.length, data:results});
     // Do something with the results
   })
   .catch((error) => {
     console.error(error);
     // Handle the error
     console.log(error);
+
+    return res.status(500).json({err:err})
   });
 
 
@@ -453,7 +461,7 @@ Promise.all(promises)
     reject(error);
   }
 });
-  res.json({id:followerUser._id,length:followerUser.followers.length,data:p});
+ return res.status(200).json({id:followerUser._id,length:followerUser.followers.length,data:p});
 }else{
 
   const followerUser = await FollowersModel.findOne({userid:whomtosearch}).populate('following');
@@ -486,11 +494,11 @@ Promise.all(promises)
     reject(error);
   }
 });
-  res.json({id:followerUser._id,length:followerUser.following.length,data:p});
+  return res.status(200).json({id:followerUser._id,length:followerUser.following.length,data:p});
 }
   } catch (error) {
     console.log(error);
-    return res.json({ success: false, message: error, data: null });
+    return res.status(500).json({ success: false, message: error, data: null });
   }
 });
 
@@ -507,18 +515,19 @@ app.post("/getAllUsersAddtional", async (req, res) => {
         data: null,
       });
     }
-    return res.json({
+    return res.status(200).json({
       success: true,
       message: "Data Fetched Sucessfully",
       data: users,
     });
   } catch (error) {
-    return res.json({ success: false, message: "Internal Error", data: null });
+    return res.status(500).json({ success: false, message: "Internal Error", data: null });
   }
 });
 
 app.post("/api/auth/UploadAdditionalInfo", async (req, res) => {
 
+   try {
     await connectdb();
     console.log(req.body.userid,"called secodnd");
 
@@ -562,6 +571,10 @@ app.post("/api/auth/UploadAdditionalInfo", async (req, res) => {
          
           return res.status(500).json({err:err});
         });
+   } catch (error) {
+    
+    return res.status(500).json({err:error});
+   }
     
 });
 
@@ -595,19 +608,19 @@ app.post("/api/auth/signup", async (req, res) => {
           followers:[],
           following:[]
         })
-      //  if(req.body.email!="connectkiit@gmail.com"){
-      //   const kiitConnectProfile = await Users.findOne({email:"connectkiit@gmail.com"}).select("_id");
-      //   var findfollower =await  FollowersModel.findOne({userid:kiitConnectProfile['_id']}).select("followers -_id");
-      //      findfollower.followers.push(users._id);
-      //      await findfollower.save
-      //      console.log(findfollower);
-      //  }
+   
         if(deviceToken){
           await DeviceToken.create({
             userid:users._id,
             deviceToken:deviceToken
           })
         }
+
+        await NotificationModel.create({
+          userid:users._id,
+          notifications:[]
+        });
+        
         return res.status(200).json({newuser:true,user:users,follow:{followers:0,following:0}})
       })
       .catch((err) => {
@@ -617,47 +630,6 @@ app.post("/api/auth/signup", async (req, res) => {
    else {
 
 
-
-
-    // if (!user.verified) {
-    //   const up = await Users.updateOne(
-    //     { _id: user.id },
-    //     { $set: { verified: true } }
-    //   );
-    //   if (up.modifiedCount > 0) {
-    //     console.log("User is Verified");
-    //     UserVerification.findOneAndDelete({ userId: user._id }).catch((err) => {
-    //       console.log(err);
-    //       return res.status(500).json(err);
-    //     });
-    //   } else {
-    //     console.log("User is Not Verified");
-    //   }
-    // }
-
-    const followerSystemInstalled = await FollowersModel.findOne({userid:user._id});
-    if(!followerSystemInstalled){
-      await FollowersModel.create({
-        userid:user._id,
-        followers:[],
-        following:[]
-      })
-    }
-  //  if(req.body.email!=="connectKiit@gmail.com"){
-  //   const kiitConnectProfile = await Users.findOne({email:"connectkiit@gmail.com"}).select("_id");
-  //   var findfollower =await  FollowersModel.findOne({userid:kiitConnectProfile['_id']}).select("followers -_id");
-  //     const check = findfollower.followers.includes(user._id);
-  //     if(check==-1){
-  //       findfollower.followers.push(user._id);
-  //       var r = await FollowersModel.findOne({userid:user._id}).select("following -_id");
-  //       r.following.push(kiitConnectProfile['_id']);
-
-
-  //     await  findfollower.save();
-  //     await r.save();
-  //     }
-  //      console.log(findfollower);
-  //  }
     const checkDeviceToken = await DeviceToken.findOne({
       userid: user._id,
     });
@@ -679,6 +651,7 @@ app.post("/api/auth/signup", async (req, res) => {
      
       }
     }
+
 
 
 
@@ -727,8 +700,10 @@ const SendPushNoti = require("./lib/SendPushNoti");
 const sendMessagec = require("./lib/SendPushNoti");
 const DeviceToken = require("./models/DeviceToken");
 const FollowersModel = require("./models/FollowersModel");
-const { cloudchannel } = require("googleapis/build/src/apis/cloudchannel");
+
 const CommunityModel = require("./models/CommunityModel");
+const NotificationModel = require("./models/NotificationModal");
+
 const auth = new google.auth.GoogleAuth({
   keyFile: key,
   scopes: "https://www.googleapis.com/auth/drive",
@@ -749,7 +724,10 @@ var jwToken = new google.auth.JWT(
 
 jwToken.authorize((authErr, token) => {
   if (authErr) {
+
+
     console.log("error : " + authErr);
+    
     return;
   } else {
     console.log("Authorization accorded");
@@ -760,11 +738,10 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     await connectdb();
 
-    const user = await Users.findById(req.body.uploadedBy).select("displayName");
-    const deviceToken = (await DeviceToken.find().select("deviceToken -_id")).filter((val)=>val.deviceToken!=req.body.deviceToken).map((val)=>val.deviceToken);
 
 
-    console.log(deviceToken);
+
+    // console.log(deviceToken);
 
     if (req.file != null) {
       var fileMetadata = {
@@ -822,19 +799,46 @@ app.post("/upload", upload.single("file"), async (req, res) => {
                 console.log(d._id.toString());
                 await d.populate("uploadedBy", "displayName email profilePic _id");
 
+              
 
-                const message = {
-                  data:{
-                    event:"upload",
-                    data:`${d._id==null?"Null id":d._id.toString()}`
-                  },
-                  image:`https://drive.google.com/uc?export=download&id=${file.data.id}`,
-                  body: `${user.displayName} has uploaded a project (${req.body.projectName})`
-                  // "sound"
-                }
+
+                  const user = await Users.findById(req.body.uploadedBy).select("displayName");
+                  const deviceTokens = await DeviceToken.find({ deviceToken: { $ne: req.body.deviceToken } }).select("deviceToken -_id userid");
+
+
+          const userIds = deviceTokens.map(deviceToken => deviceToken.userid.toString());
+          const deviceTokenList = deviceTokens.map(deviceToken => deviceToken.deviceToken);
+
+
+
+  
+                  const message = {
+                    data:{
+                      event:"upload",
+                      data:`${d._id==null?"Null id":d._id.toString()}`
+                    },
+                    image:`https://drive.google.com/uc?export=download&id=${file.data.id}`,
+                    body: `${user.displayName} has uploaded a project (${req.body.projectName})`
+                    // "sound"
+                  }
+                  
+  
+                   sendMessagec(deviceTokenList,message);
+
+
+                   await NotificationModel.updateMany(
+                    { userid: { $in: userIds } },
+                    { $push: { notifications: { senderUserId:req.body.uploadedBy,type:"upload",contentId:d._id } } }
+                  );
+
+
                 
 
-                 sendMessagec(deviceToken,message);
+
+
+                
+                
+                 
                 // sendMessagec("")
                 return res.json({
                   success: true,
@@ -874,7 +878,14 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         .then(async(d) => {
 
 
+      
           await d.populate("uploadedBy", "displayName email profilePic _id");
+          const deviceTokens = await DeviceToken.find({ deviceToken: { $ne: req.body.deviceToken } }).select("deviceToken -_id userid");
+
+
+          const userIds = deviceTokens.map(deviceToken => deviceToken.userid.toString());
+          const deviceTokenList = deviceTokens.map(deviceToken => deviceToken.deviceToken);
+
           const message = {
             data:{
               event:"upload",
@@ -882,12 +893,23 @@ app.post("/upload", upload.single("file"), async (req, res) => {
               data:`${d._id==null?"Null id":d._id.toString()}`,
             },
             image:``,
-            body: `${user.displayName} has uploaded a project (${req.body.projectName})`
+            body: `${d.uploadedBy.displayName} has uploaded a project (${req.body.projectName})`
             // "sound"
           }
           
 
-           sendMessagec(deviceToken,message);
+           sendMessagec(deviceTokenList,message);
+
+         
+         
+           // res.json({userIds,deviceTokenList});
+       
+       
+           await NotificationModel.updateMany(
+             { userid: { $in: userIds } },
+             { $push: { notifications: { senderUserId:req.body.uploadedBy,type:"upload",contentId:d._id } } }
+           )
+
           return res.json({ success: true, message: "File has been created ", project:d});
         })
         .catch((err) => {
@@ -896,12 +918,75 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         });
     }
   } catch (error) {
-    console.log(err);
+    console.log(error);
 
     return res.json({ success: false, message: "Error Something went wrong!" });
     // console.log(error);
   }
 });
+
+
+
+
+
+app.post("/testnoti",async(req,res)=>{
+
+  try {
+    await connectdb();
+    // const deviceTokens = await DeviceToken.find({ deviceToken: { $ne: req.body.deviceToken } }).select("deviceToken -_id userid");
+
+
+    // const userIds = deviceTokens.map(deviceToken => deviceToken.userid.toString());
+    // const deviceTokenList = deviceTokens.map(deviceToken => deviceToken.deviceToken);
+  
+  
+    // // res.json({userIds,deviceTokenList});
+
+
+    // await NotificationModel.updateMany(
+    //   { userid: { $in: userIds } },
+    //   { $push: { notifications: { senderUserId:"6489edd2649838fdeda4c74e",type:"like", } } }
+    // ).then((r)=>{
+    //   res.json(r);
+    // })
+
+
+
+
+
+
+    // await connectdb();
+
+    const users = await Users.find();
+
+    let allModelsCreated = true; // Variable to track creation status
+
+    for (const user of users) {
+      const existingNotification = await NotificationModel.findOne({ userid: user._id });
+
+      if (!existingNotification) {
+        const notification = new NotificationModel({
+          userid: user._id,
+          notifications: []
+        });
+
+        await notification.save();
+      }
+    }
+
+    if (allModelsCreated) {
+      res.json({ message: "All notification models created successfully." });
+    } else {
+      res.json({ message: "Some notification models already exist." });
+    }
+
+
+  } catch (error) {
+    console.log(error)
+  }
+
+
+})
 
 
 app.post("/notificationClickFetch",async(req,res)=>{
@@ -958,6 +1043,12 @@ app.post("/like", async (req, res) => {
 
 
       if(req.body.userid!=post.uploadedBy._id){
+
+
+        await NotificationModel.updateOne(
+          { userid: post.uploadedBy._id },
+          { $push: { notifications: { senderUserId:req.body.userid,type:"like",contentId:post._id } } }
+        );
 
         const message = {
           data:{
@@ -1018,7 +1109,10 @@ try {
         const deviceToken = await DeviceToken.findOne({userid:post.comments[cmntidx].userid}).select("deviceToken -_id");
         const user = await Users.findById(req.body.userid).select("displayName -_id");
       
-
+        await NotificationModel.updateOne(
+          { userid: post.comments[cmntidx].userid },
+          { $push: { notifications: { senderUserId:req.body.userid,type:"commentLike",contentId:post._id } } }
+        );
         const message = {
           data:{
             event:"commentLike",
@@ -1089,7 +1183,10 @@ app.post("/repliesLike", async (req, res) => {
     if(req.body.userid!=post.comments[parentCmntIdx].replies[replyidx].userid){
       const deviceToken = await DeviceToken.findOne({userid:post.comments[parentCmntIdx].replies[replyidx].userid}).select("deviceToken -_id");
       const user = await Users.findById(req.body.userid).select("displayName -_id");
-    
+      await NotificationModel.updateOne(
+        { userid: post.comments[parentCmntIdx].replies[replyidx].userid },
+        { $push: { notifications: { senderUserId:req.body.userid,type:"replyLike",contentId:post._id } } }
+      );
       const message = {
         data:{
           event:"replyLike",
@@ -1308,7 +1405,10 @@ app.post("/replies", async (req, res) => {
       const likedBy = await Users.findById(req.body.userid).select("displayName -_id");
      
       if(p.comments[cmntIdx].userid!=req.body.userid){
-
+        await NotificationModel.updateOne(
+          { userid: p.comments[cmntIdx].userid },
+          { $push: { notifications: { senderUserId:req.body.userid,type:"addreply",contentId:postId } } }
+        );
         const message = {
           data:{
             event:"addReply",
@@ -1526,6 +1626,7 @@ app.post("/getpost", async (req, res) => {
  });
 
 app.post("/addcomment", async (req, res) => {
+ try {
   await connectdb();
 
   // const uploadedBy = req.body.uploadedBy;
@@ -1549,6 +1650,11 @@ app.post("/addcomment", async (req, res) => {
   const user = await Users.findById(req.body.userid).select("displayName -_id");
  
 if(req.body.userid!=p.uploadedBy._id){
+
+  await NotificationModel.updateOne(
+    { userid: p.uploadedBy._id },
+    { $push: { notifications: { senderUserId:req.body.userid,type:"addcomments", contentId:postid} } }
+  );
   const message = {
     data:{
       event:"addComment",
@@ -1572,6 +1678,9 @@ if(req.body.userid!=p.uploadedBy._id){
       await p.populate("comments.userid");
       res.json({ success: true,comments:p.comments[p.comments.length-1] })})
     .catch((err) => res.json({ success: false, err: err }));
+ } catch (error) {
+  return res.status(200).json({err:error});
+ }
 });
 
 app.post("/deleteProject", async (req, res) => {
@@ -1704,8 +1813,15 @@ app.post("/follow",async(req,res)=>{
             }
           
             sendMessagec([`${deviceToken.deviceToken}`],message);
+            
   
           }
+
+          await NotificationModel.updateOne(
+            { userid: followingUserId },
+            { $push: { notifications: { senderUserId:currentUserId,type:"follow",contentId:currentUserId } } }
+          );
+  
          
   
           res.status(200).json({ deleted: true ,follow:true});
@@ -1933,9 +2049,15 @@ app.post("/addCommunityMessage",upload.single("file"),async(req,res)=>{
                 });
 
               
-                const deviceToken = (await DeviceToken.find().select("deviceToken")).map((val)=>val.deviceToken);
-                console.log(deviceToken);
+                // const deviceToken = (await DeviceToken.find().select("deviceToken")).map((val)=>val.deviceToken);
+                // console.log(deviceToken);
 
+                
+                                 const deviceTokens = await DeviceToken.find({}).select("deviceToken -_id userid");
+                
+                
+                                 const userIds = deviceTokens.map(deviceToken => deviceToken.userid.toString());
+                                 const deviceTokenList = deviceTokens.map(deviceToken => deviceToken.deviceToken);
 
                 const message = {
                   data:{
@@ -1948,7 +2070,13 @@ app.post("/addCommunityMessage",upload.single("file"),async(req,res)=>{
                 }
                 
 
-                 sendMessagec(deviceToken,message);
+
+                 sendMessagec(deviceTokenList,message);
+                 await NotificationModel.updateMany(
+                  { userid: { $in: userIds } },
+                  { $push: { notifications: { senderUserId:"64880b2133b33a1ef1cb782f",type:"communityMessage",contentId:"" } } }
+                );
+
                 // sendMessagec("")
                 return res.status(200).json(d);
               })
@@ -1978,8 +2106,12 @@ app.post("/addCommunityMessage",upload.single("file"),async(req,res)=>{
         image:null
       }).then(async(r)=>{
         console.log(r);
-        const deviceToken = (await DeviceToken.find().select("deviceToken")).map((val)=>val.deviceToken);
-      
+        // const deviceToken = (await DeviceToken.find().select("deviceToken")).map((val)=>val.deviceToken);
+        const deviceTokens = await DeviceToken.find({}).select("deviceToken -_id userid");
+                
+                
+        const userIds = deviceTokens.map(deviceToken => deviceToken.userid.toString());
+        const deviceTokenList = deviceTokens.map(deviceToken => deviceToken.deviceToken);
         const message = {
           data:{
             event:"community",
@@ -1991,7 +2123,12 @@ app.post("/addCommunityMessage",upload.single("file"),async(req,res)=>{
         }
         
 
-         sendMessagec(deviceToken,message);
+         sendMessagec(deviceTokenList,message);
+         console.log(deviceTokenList);
+         await NotificationModel.updateMany(
+          { userid: { $in: userIds } },
+          { $push: { notifications: { senderUserId:"64880b2133b33a1ef1cb782f",type:"communityMessage",contentId:"" } } }
+        );
        return res.status(200).json(r);
       }).catch((err)=>{
         throw err;
@@ -2055,8 +2192,77 @@ app.post("/deleteCommunityMessage",async(req,res)=>{
   })
 
 
+
+
+  //getting notifications
+
+
+//   app.post("/getNotifications",async(req,res)=>{
+
+//     try {
+      
+//       await connectdb();
+
+//       const offset = req.body.offset;
+//       const limit = 20;
+
+
+// console.log(req.body.currentUserId);
+//     const noti = await NotificationModel.findOne({userid:req.body.currentUserId}).select("notifications -_id").populate("notifications.senderUserId","displayName _id profilePic");
+
+//     if(!noti){
+//       return console.log("error");
+//     }
+
+//     const notifications = noti.notifications;
+
+//     const totalLength = notifications.length;
+//     const paginatedNotifications = notifications.slice(offset, offset + limit);
+
+//     // console.log(noti.notifications);
+
+
+
+// return res.status(200).json({length:totalLength,notification:paginatedNotifications});
+
+
+
+//     } catch (error) {
+//       console.log(error);
+//       return res.status(500).json({err:error})
+//     }
+//   })
   
 
+app.post("/getNotifications", async (req, res) => {
+  try {
+    await connectdb();
+
+    const offset = req.body.offset;
+    const limit = 10;
+    const currentUserId = req.body.currentUserId;
+
+    const noti = await NotificationModel.findOne({ userid: currentUserId })
+      .select("notifications -_id")
+      .populate("notifications.senderUserId", "displayName _id profilePic");
+
+    if (!noti || !noti.notifications) {
+      return res.status(404).json({ error: "No notifications found" });
+    }
+
+    const notifications = noti.notifications;
+
+    const totalLength = notifications.length;
+    const paginatedNotifications = notifications.reverse().slice(offset, offset + limit);
+
+    return res
+      .status(200)
+      .json({ length: totalLength, notification: paginatedNotifications });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log("Server is listening on Port 5000");
