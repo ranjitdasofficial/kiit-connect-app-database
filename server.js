@@ -655,9 +655,9 @@ app.post("/api/auth/signup", async (req, res) => {
 
 
 
-// const follow = await FollowersModel.findOne({userid:user._id});
+const follow = await FollowersModel.findOne({userid:user._id});
 
-return res.status(200).json({newuser:false,user:user,follow:{followers:followerSystemInstalled.followers.length,following:followerSystemInstalled.following.length}})
+return res.status(200).json({newuser:false,user:user,follow:{followers:follow.followers.length,following:follow.following.length}})
 
 //       }
    }
