@@ -621,7 +621,7 @@ app.post("/api/auth/signup", async (req, res) => {
           notifications:[]
         });
         
-        return res.status(200).json({newuser:true,user:users,follow:{followers:0,following:0}})
+        return res.status(200).json({newuser:true,user:users,follow:{followers:0,following:0},projectCount:0})
       })
       .catch((err) => {
         return res.status(500).json({err:err});
@@ -656,8 +656,9 @@ app.post("/api/auth/signup", async (req, res) => {
 
 
 const follow = await FollowersModel.findOne({userid:user._id});
+const projectCount = await ProjectModel.find({uploadedBy:user._id});
 
-return res.status(200).json({newuser:false,user:user,follow:{followers:follow.followers.length,following:follow.following.length}})
+return res.status(200).json({newuser:false,user:user,follow:{followers:follow.followers.length,following:follow.following.length,projectCount:projectCount.length}})
 
 //       }
    }
