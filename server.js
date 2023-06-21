@@ -8,6 +8,74 @@ const fs = require("fs");
 
 const Users = require("./models/User");
 const app = express();
+
+
+
+
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Specify the directory where uploaded files will be stored
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    // Specify a unique name for the uploaded file
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+// Create the Multer upload instance
+const upload = multer({ storage: storage });
+
+const { google } = require("googleapis");
+// const fs = require("fs");
+// const path = require("path");
+
+const key = require("./cred.json");
+const { ProjectModel } = require("./models/ProjectModel");
+const likemodel = require("./models/likemodel");
+const { Post, Comment } = require("./models/CommentsModel");
+const { default: mongoose } = require("mongoose");
+const SendPushNoti = require("./lib/SendPushNoti");
+const sendMessagec = require("./lib/SendPushNoti");
+const DeviceToken = require("./models/DeviceToken");
+const FollowersModel = require("./models/FollowersModel");
+
+const CommunityModel = require("./models/CommunityModel");
+const NotificationModel = require("./models/NotificationModal");
+const { file } = require("googleapis/build/src/apis/file");
+
+const auth = new google.auth.GoogleAuth({
+  keyFile: key,
+  scopes: "https://www.googleapis.com/auth/drive",
+});
+
+var drive = google.drive({
+  version: "v3",
+  auth: auth,
+});
+
+var jwToken = new google.auth.JWT(
+  key.client_email,
+  null,
+  key.private_key,
+  ["https://www.googleapis.com/auth/drive"],
+  null
+);
+
+jwToken.authorize((authErr, token) => {
+  if (authErr) {
+
+
+    console.log("error : " + authErr);
+    
+    return;
+  } else {
+    console.log("Authorization accorded");
+  }
+});
+
 app.use(express.json());
 app.use(cors());
 
@@ -97,22 +165,112 @@ let transporter = nodemailer.createTransport({
 
 // Send the email
 
-app.post("/report", async (req, res) => {
-  var rp = await sendMail(
+app.post("/report",upload.single("file"), async (req, res) => {
+
+try {
+ if(req.file!=null){
+  var fileMetadata = {
+    name: req.file.originalname,
+
+    parents: ["1dqvUovRlXlVRQaSohe2DVu7ZVIT5Minc"],
+  };
+  //   C:\Users\KIIT01\OneDrive\Desktop\KIIT_Project\test\kiit_university_app\pages\api\drive\video.mp4
+  var media = {
+    mimeType: req.file.mimetype,
+    body: fs.createReadStream(path.join(__dirname, req.file.path)),
+  };
+  drive.files.create(
+    {
+      auth: jwToken,
+      resource: fileMetadata,
+      media: media,
+      fields: "id",
+    },
+   async function (err, file) {
+      if (err) {
+        // Handle error
+        console.error(err);
+        fs.unlink(path.join(__dirname, req.file.path), (err) => {
+          if (err) {
+            console.log("Error Deleting file");
+          } else {
+            console.log("Deleted Sucessfully");
+          }
+        });
+        return res.status(500).json({ message: "Your response has been recorded", success: false  });
+      }
+
+
+      fs.unlink(path.join(__dirname, req.file.path), (err) => {
+        if (err) {
+          console.log("Error Deleting file");
+        } else {
+          console.log("Deleted Sucessfully");
+        }
+      });
+
+      
+
+      var rp = await sendMail(
+        req.body.message,
+        req.body.senderEmail,
+        req.body.senderName,
+        req.file.originalname,
+        file.data.id
+      );
+      res.json(rp);
+
+
+    });
+
+ }else{
+
+  var rp = await sendMailWithoutAttachment(
     req.body.message,
     req.body.senderEmail,
-    req.body.senderName
+    req.body.senderName,
   );
   res.json(rp);
+
+ }
+
+} catch (error) {
+  return res.status(500).json({ message: "Your response has been recorded", success: false  });
+}
+
 });
 
-const sendMail = (message, senderEmail, senderName) =>
+const sendMail = (message, senderEmail, senderName,filename,url) =>
   new Promise((resolve, reject) => {
     let mailOptions = {
       from: '"KIIT CONNECT"<no-reply@kiitconnect.live>',
       to: "technicalranjit@gmail.com",
       subject: `Feedback/Report from : ${senderName} : ${senderEmail} `,
       text: `${message}`,
+      attachments: [
+        {
+          filename: filename,  // Set the appropriate filename and extension
+          path: `https://drive.google.com/uc?export=download&id=${url}`,  
+        }
+      ]
+    };
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        reject({ message: "Error Occured", success: false });
+      } else {
+        // console.log('Email sent: ' + info.response);
+        resolve({ message: "Your response has been recorded", success: true });
+      }
+    });
+  });
+const sendMailWithoutAttachment = (message, senderEmail, senderName) =>
+  new Promise((resolve, reject) => {
+    let mailOptions = {
+      from: '"KIIT CONNECT"<no-reply@kiitconnect.live>',
+      to: "technicalranjit@gmail.com",
+      subject: `Feedback/Report from : ${senderName} : ${senderEmail} `,
+      text: `${message}`,
+     
     };
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
@@ -671,69 +829,6 @@ return res.status(200).json({newuser:false,user:user,follow:{followers:follow.fo
 );
 
 //uploading images to google drive
-
-const path = require("path");
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Specify the directory where uploaded files will be stored
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    // Specify a unique name for the uploaded file
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
-// Create the Multer upload instance
-const upload = multer({ storage: storage });
-
-const { google } = require("googleapis");
-// const fs = require("fs");
-// const path = require("path");
-
-const key = require("./cred.json");
-const { ProjectModel } = require("./models/ProjectModel");
-const likemodel = require("./models/likemodel");
-const { Post, Comment } = require("./models/CommentsModel");
-const { default: mongoose } = require("mongoose");
-const SendPushNoti = require("./lib/SendPushNoti");
-const sendMessagec = require("./lib/SendPushNoti");
-const DeviceToken = require("./models/DeviceToken");
-const FollowersModel = require("./models/FollowersModel");
-
-const CommunityModel = require("./models/CommunityModel");
-const NotificationModel = require("./models/NotificationModal");
-
-const auth = new google.auth.GoogleAuth({
-  keyFile: key,
-  scopes: "https://www.googleapis.com/auth/drive",
-});
-
-var drive = google.drive({
-  version: "v3",
-  auth: auth,
-});
-
-var jwToken = new google.auth.JWT(
-  key.client_email,
-  null,
-  key.private_key,
-  ["https://www.googleapis.com/auth/drive"],
-  null
-);
-
-jwToken.authorize((authErr, token) => {
-  if (authErr) {
-
-
-    console.log("error : " + authErr);
-    
-    return;
-  } else {
-    console.log("Authorization accorded");
-  }
-});
 
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
